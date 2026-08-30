@@ -10,6 +10,7 @@ public final class Prefs {
   public static String deviceId(Context c){ return p(c).getString("device_id", "office-sim-01"); }
   public static boolean enabled(Context c){ return p(c).getBoolean("enabled", false); }
   public static boolean smartFilterEnabled(Context c){ return p(c).getBoolean("smart_filter_enabled", false); }
+  public static boolean healthCheckEnabled(Context c){ return p(c).getBoolean("health_check_enabled", true); }
   public static String blockMessageKeywords(Context c){ return p(c).getString("block_message_keywords", "OTP, PIN, password"); }
   public static String removeKeywords(Context c){ return p(c).getString("remove_keywords", ""); }
   public static String removeSentenceKeywords(Context c){ return p(c).getString("remove_sentence_keywords", ""); }
@@ -35,4 +36,5 @@ public final class Prefs {
       .putString("remove_line_keywords",removeLines.trim()).putString("sender_filter_rules",senderRules.trim())
       .putString("keyword_forward_rules",keywordForwardRules.trim()).putString("keyword_filter_rules",keywordFilterRules.trim()).apply();
   }
+  public static void setHealthCheckEnabled(Context c,boolean enabled){ p(c).edit().putBoolean("health_check_enabled",enabled).apply(); }
 }

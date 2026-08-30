@@ -21,6 +21,10 @@
     <Button android:id="@+id/save" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="SAVE SETTINGS" android:layout_marginTop="16dp" />
     <Button android:id="@+id/test" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="SEND TEST MESSAGE" />
     <Button android:id="@+id/viewDeliveryLog" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="VIEW DELIVERY LOG" />
+    <Button android:id="@+id/backgroundSettings" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="BACKGROUND RELIABILITY SETTINGS" />
+    <TextView android:id="@+id/backgroundStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Checking battery optimization…" android:textColor="#7A4E00" android:layout_marginBottom="8dp" />
+    <CheckBox android:id="@+id/healthCheck" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Enable inactivity health check" android:checked="true" />
+    <Button android:id="@+id/viewInactivityLog" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="VIEW INACTIVITY HISTORY" />
     <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Disabled until settings are saved." android:textColor="#555555" android:layout_marginTop="16dp" />
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Sender routing and destination groups are controlled by WordPress Admin." android:textColor="#7A4E00" android:layout_marginTop="20dp" />
   </LinearLayout>

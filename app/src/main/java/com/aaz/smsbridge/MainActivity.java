@@ -4,6 +4,9 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.pm.PackageManager;
+import android.content.Intent;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
@@ -25,8 +28,8 @@ public class MainActivity extends Activity {
   private static final String[] ACTION_LABELS={"Block entire message","Remove keyword only","Remove sentence","Remove line","Remove range"};
   private static final String[] ACTION_VALUES={"block","remove_keyword","remove_sentence","remove_line","remove_range"};
   EditText baseUrl,secret,deviceId,blockKeywords,removeKeywords,removeSentenceKeywords,removeLineKeywords;
-  CheckBox enabled,smartFilter;
-  TextView status,senderRuleSummary,keywordForwardSummary,keywordRuleSummary;
+  CheckBox enabled,smartFilter,healthCheck;
+  TextView status,senderRuleSummary,keywordForwardSummary,keywordRuleSummary,backgroundStatus;
   String senderRulesRaw,keywordForwardRaw,keywordRulesRaw;
   AlertDialog ruleManagerDialog;
   AlertDialog keywordRuleManagerDialog;
@@ -43,10 +46,12 @@ public class MainActivity extends Activity {
     removeLineKeywords=findViewById(R.id.removeLineKeywords);
     enabled=findViewById(R.id.enabled);
     smartFilter=findViewById(R.id.smartFilter);
+    healthCheck=findViewById(R.id.healthCheck);
     status=findViewById(R.id.status);
     senderRuleSummary=findViewById(R.id.senderRuleSummary);
     keywordForwardSummary=findViewById(R.id.keywordForwardSummary);
     keywordRuleSummary=findViewById(R.id.keywordRuleSummary);
+    backgroundStatus=findViewById(R.id.backgroundStatus);
     baseUrl.setText(Prefs.baseApiUrl(this));
     secret.setText(Prefs.secret(this));
     deviceId.setText(Prefs.deviceId(this));
@@ -59,6 +64,7 @@ public class MainActivity extends Activity {
     keywordRulesRaw=Prefs.keywordFilterRules(this);
     enabled.setChecked(Prefs.enabled(this));
     smartFilter.setChecked(Prefs.smartFilterEnabled(this));
+    healthCheck.setChecked(Prefs.healthCheckEnabled(this));
     updateRuleSummary();
     updateKeywordForwardSummary();
     updateKeywordRuleSummary();
@@ -66,13 +72,45 @@ public class MainActivity extends Activity {
     findViewById(R.id.manageKeywordForward).setOnClickListener(v -> showKeywordForwardManager());
     findViewById(R.id.manageKeywordRules).setOnClickListener(v -> showKeywordRuleManager());
     findViewById(R.id.viewDeliveryLog).setOnClickListener(v -> showDeliveryLog());
+    findViewById(R.id.backgroundSettings).setOnClickListener(v -> openBackgroundSettings());
+    findViewById(R.id.viewInactivityLog).setOnClickListener(v -> showInactivityLog());
     findViewById(R.id.save).setOnClickListener(v -> save());
     findViewById(R.id.test).setOnClickListener(v -> runV15Test());
     requestReceivePermission();
+    updateBackgroundStatus();
+  }
+
+  @Override protected void onResume(){
+    super.onResume();
+    if(backgroundStatus!=null) updateBackgroundStatus();
+  }
+
+  private void openBackgroundSettings(){
+    try { startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)); }
+    catch(Exception ignored){ startActivity(new Intent(Settings.ACTION_SETTINGS)); }
+    Toast.makeText(this,"Set AAZ SMS Bridge to Not optimized / Unrestricted",Toast.LENGTH_LONG).show();
+  }
+
+  private void updateBackgroundStatus(){
+    PowerManager power=(PowerManager)getSystemService(POWER_SERVICE);
+    boolean unrestricted=power!=null&&power.isIgnoringBatteryOptimizations(getPackageName());
+    backgroundStatus.setText(unrestricted
+        ?"Background status: Unrestricted / not optimized"
+        :"Background status: Battery optimized. Tap above and set this app to Not optimized / Unrestricted.");
+  }
+
+  private void showInactivityLog(){
+    if(Prefs.healthCheckEnabled(this)) InactivityLog.checkNow(this);
+    List<String> entries=InactivityLog.entries(this);
+    String message=entries.isEmpty()?"No inactivity detected yet.":android.text.TextUtils.join("\n\n",entries);
+    new AlertDialog.Builder(this).setTitle("Inactivity history — latest 20").setMessage(message)
+        .setPositiveButton("CLOSE",null).setNegativeButton("CLEAR",(dialog,which) -> InactivityLog.clear(this)).show();
   }
 
   void save(){
     Prefs.save(this,baseUrl.getText().toString(),secret.getText().toString(),deviceId.getText().toString(),enabled.isChecked(),smartFilter.isChecked(),blockKeywords.getText().toString(),removeKeywords.getText().toString(),removeSentenceKeywords.getText().toString(),removeLineKeywords.getText().toString(),senderRulesRaw,keywordForwardRaw,keywordRulesRaw);
+    Prefs.setHealthCheckEnabled(this,healthCheck.isChecked());
+    HealthMonitor.update(this);
     baseUrl.setText(Prefs.baseApiUrl(this));
     status.setText(enabled.isChecked()?"Forwarding enabled":"Forwarding disabled");
   }

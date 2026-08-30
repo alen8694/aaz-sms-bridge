@@ -7,8 +7,8 @@ android {
         applicationId = "com.aaz.smsbridge"
         minSdk = 26
         targetSdk = 35
-        versionCode = 12
-        versionName = "1.9.0"
+        versionCode = 16
+        versionName = "1.9.4"
     }
 
     compileOptions {
