@@ -13,6 +13,8 @@
     <EditText android:id="@+id/removeLineKeywords" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Remove lines containing these keywords" android:minLines="2" android:inputType="textMultiLine" />
     <Button android:id="@+id/manageSenderRules" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="MANAGE SENDER-SPECIFIC RULES" />
     <TextView android:id="@+id/senderRuleSummary" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="No sender-specific rules." android:textColor="#555555" android:layout_marginBottom="8dp" />
+    <Button android:id="@+id/manageKeywordForward" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="KEYWORD BASED FORWARD" />
+    <TextView android:id="@+id/keywordForwardSummary" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="No forwarding keywords." android:textColor="#555555" android:layout_marginBottom="8dp" />
     <CheckBox android:id="@+id/enabled" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Enable SMS forwarding" android:checked="false" android:layout_marginTop="12dp" />
     <Button android:id="@+id/save" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="SAVE SETTINGS" android:layout_marginTop="16dp" />
     <Button android:id="@+id/test" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="SEND TEST MESSAGE" />

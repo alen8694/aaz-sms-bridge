@@ -26,8 +26,8 @@ public class MainActivity extends Activity {
   private static final String[] ACTION_VALUES={"block","remove_keyword","remove_sentence","remove_line","remove_range"};
   EditText baseUrl,secret,deviceId,blockKeywords,removeKeywords,removeSentenceKeywords,removeLineKeywords;
   CheckBox enabled,smartFilter;
-  TextView status,senderRuleSummary;
-  String senderRulesRaw;
+  TextView status,senderRuleSummary,keywordForwardSummary;
+  String senderRulesRaw,keywordForwardRaw;
   AlertDialog ruleManagerDialog;
 
   @Override public void onCreate(Bundle state){
@@ -44,6 +44,7 @@ public class MainActivity extends Activity {
     smartFilter=findViewById(R.id.smartFilter);
     status=findViewById(R.id.status);
     senderRuleSummary=findViewById(R.id.senderRuleSummary);
+    keywordForwardSummary=findViewById(R.id.keywordForwardSummary);
     baseUrl.setText(Prefs.baseApiUrl(this));
     secret.setText(Prefs.secret(this));
     deviceId.setText(Prefs.deviceId(this));
@@ -52,10 +53,13 @@ public class MainActivity extends Activity {
     removeSentenceKeywords.setText(Prefs.removeSentenceKeywords(this));
     removeLineKeywords.setText(Prefs.removeLineKeywords(this));
     senderRulesRaw=Prefs.senderRules(this);
+    keywordForwardRaw=Prefs.keywordForwardRules(this);
     enabled.setChecked(Prefs.enabled(this));
     smartFilter.setChecked(Prefs.smartFilterEnabled(this));
     updateRuleSummary();
+    updateKeywordForwardSummary();
     findViewById(R.id.manageSenderRules).setOnClickListener(v -> showRuleManager());
+    findViewById(R.id.manageKeywordForward).setOnClickListener(v -> showKeywordForwardManager());
     findViewById(R.id.viewDeliveryLog).setOnClickListener(v -> showDeliveryLog());
     findViewById(R.id.save).setOnClickListener(v -> save());
     findViewById(R.id.test).setOnClickListener(v -> runV15Test());
@@ -63,7 +67,7 @@ public class MainActivity extends Activity {
   }
 
   void save(){
-    Prefs.save(this,baseUrl.getText().toString(),secret.getText().toString(),deviceId.getText().toString(),enabled.isChecked(),smartFilter.isChecked(),blockKeywords.getText().toString(),removeKeywords.getText().toString(),removeSentenceKeywords.getText().toString(),removeLineKeywords.getText().toString(),senderRulesRaw);
+    Prefs.save(this,baseUrl.getText().toString(),secret.getText().toString(),deviceId.getText().toString(),enabled.isChecked(),smartFilter.isChecked(),blockKeywords.getText().toString(),removeKeywords.getText().toString(),removeSentenceKeywords.getText().toString(),removeLineKeywords.getText().toString(),senderRulesRaw,keywordForwardRaw);
     baseUrl.setText(Prefs.baseApiUrl(this));
     status.setText(enabled.isChecked()?"Forwarding enabled":"Forwarding disabled");
   }
@@ -71,6 +75,33 @@ public class MainActivity extends Activity {
   private void updateRuleSummary(){
     int count=SenderRules.parse(senderRulesRaw).size();
     senderRuleSummary.setText(count==0?"No sender-specific rules.":count+" sender-specific rule(s). Tap Manage to edit.");
+  }
+
+  private void updateKeywordForwardSummary(){
+    int count=KeywordForwardRules.parse(keywordForwardRaw).size();
+    keywordForwardSummary.setText(count==0?"No forwarding keywords.":count+" forwarding keyword(s). Tap to edit.");
+  }
+
+  private void showKeywordForwardManager(){
+    EditText input=new EditText(this);
+    input.setHint("Keywords separated by comma or new line");
+    input.setText(keywordForwardRaw);
+    input.setMinLines(4);
+    input.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+    int padding=dp(20);
+    LinearLayout holder=new LinearLayout(this);
+    holder.setPadding(padding,dp(4),padding,0);
+    holder.addView(input,new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT));
+    AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Keyword Based Forward")
+        .setMessage("If any keyword matches the SMS body, it can forward regardless of sender. Original sender is preserved.")
+        .setView(holder).setPositiveButton("SAVE",null).setNegativeButton("CANCEL",null).create();
+    dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+      keywordForwardRaw=input.getText().toString().trim();
+      updateKeywordForwardSummary();
+      dialog.dismiss();
+      Toast.makeText(this,"Keywords updated. Tap SAVE SETTINGS to apply.",Toast.LENGTH_SHORT).show();
+    }));
+    dialog.show();
   }
 
   private void showDeliveryLog(){

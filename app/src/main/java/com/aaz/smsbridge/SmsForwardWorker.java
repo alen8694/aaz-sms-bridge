@@ -26,8 +26,9 @@ public final class SmsForwardWorker extends Worker {
     if(sms==null) return Result.success();
     if(!Prefs.enabled(context)){ store.delete(id); DeliveryLog.add(context,sms.sender,"Cancelled: forwarding disabled"); return Result.success(); }
     try {
+      boolean keywordMatched=KeywordForwardRules.matches(sms.body,Prefs.keywordForwardRules(context));
       BridgeClient.SenderSyncResult sync=BridgeClient.syncSender(context,sms.sender);
-      if(!sync.routed){ store.delete(id); DeliveryLog.add(context,sms.sender,"Sender not routed"); return Result.success(); }
+      if(!sync.routed&&!keywordMatched){ store.delete(id); DeliveryLog.add(context,sms.sender,"Sender/keyword not routed"); return Result.success(); }
       String outgoing=sms.body;
       if(Prefs.smartFilterEnabled(context)){
         SmartFilter.Result filtered;
@@ -40,7 +41,7 @@ public final class SmsForwardWorker extends Worker {
       BridgeClient.sendInbox(context,sms.sender,outgoing,sms.receivedAt,id);
       store.delete(id);
       DuplicateGuard.finish(context,id,true);
-      DeliveryLog.add(context,sms.sender,"SMS forwarded");
+      DeliveryLog.add(context,sms.sender,keywordMatched&&!sync.routed?"SMS forwarded by keyword":"SMS forwarded");
       return Result.success();
     } catch(Exception error){
       if(!retryable(error)||getRunAttemptCount()+1>=MAX_ATTEMPTS){
