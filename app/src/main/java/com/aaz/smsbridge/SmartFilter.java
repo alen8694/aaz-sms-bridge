@@ -27,7 +27,7 @@ final class SmartFilter {
       filtered=String.join(" ",keptSentences);
     }
     for(Pattern pattern:patterns(keywords(removeKeywords))) filtered=pattern.matcher(filtered).replaceAll("");
-    filtered=filtered.replaceAll("[ \\t]+(?=\\r?$)","").replaceAll("(?m)^[ \\t]+","").trim();
+    filtered=filtered.replaceAll("(?m)[ \\t]+(?=\\r?$)","").replaceAll("(?m)^[ \\t]+","").trim();
     return filtered.isEmpty()?new Result(Action.BLOCK,""):new Result(Action.FORWARD,filtered);
   }
 
