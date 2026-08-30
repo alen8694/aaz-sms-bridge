@@ -79,6 +79,8 @@ final class SenderRules {
     return result.isEmpty()?new SmartFilter.Result(SmartFilter.Action.BLOCK,""):new SmartFilter.Result(SmartFilter.Action.FORWARD,result);
   }
 
+  static SmartFilter.Result removeRangeForRule(String message,String value){ return removeRange(message,value); }
+
   private static boolean sameSender(String actual,String configured){
     return normalize(actual).equals(normalize(configured));
   }

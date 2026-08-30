@@ -31,10 +31,14 @@ public final class SmsForwardWorker extends Worker {
       if(!sync.routed&&!keywordMatched){ store.delete(id); DeliveryLog.add(context,sms.sender,"Sender/keyword not routed"); return Result.success(); }
       String outgoing=sms.body;
       if(Prefs.smartFilterEnabled(context)){
-        SmartFilter.Result filtered;
-        if(SenderRules.hasRulesForSender(sms.sender,Prefs.senderRules(context)))
-          filtered=SenderRules.apply(sms.sender,outgoing,Prefs.senderRules(context));
-        else filtered=SmartFilter.apply(outgoing,Prefs.blockMessageKeywords(context),Prefs.removeKeywords(context),Prefs.removeSentenceKeywords(context),Prefs.removeLineKeywords(context));
+        boolean senderSpecific=SenderRules.hasRulesForSender(sms.sender,Prefs.senderRules(context));
+        boolean keywordSpecific=KeywordRules.hasRulesForMessage(sms.body,Prefs.keywordFilterRules(context));
+        SmartFilter.Result filtered=new SmartFilter.Result(SmartFilter.Action.FORWARD,outgoing);
+        if(senderSpecific) filtered=SenderRules.apply(sms.sender,filtered.message,Prefs.senderRules(context));
+        if(filtered.action!=SmartFilter.Action.BLOCK&&keywordSpecific)
+          filtered=KeywordRules.apply(sms.body,filtered.message,Prefs.keywordFilterRules(context));
+        if(!senderSpecific&&!keywordSpecific)
+          filtered=SmartFilter.apply(outgoing,Prefs.blockMessageKeywords(context),Prefs.removeKeywords(context),Prefs.removeSentenceKeywords(context),Prefs.removeLineKeywords(context));
         if(filtered.action==SmartFilter.Action.BLOCK){ store.delete(id); DeliveryLog.add(context,sms.sender,"Blocked by local filter"); return Result.success(); }
         outgoing=filtered.message;
       }

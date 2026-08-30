@@ -26,9 +26,10 @@ public class MainActivity extends Activity {
   private static final String[] ACTION_VALUES={"block","remove_keyword","remove_sentence","remove_line","remove_range"};
   EditText baseUrl,secret,deviceId,blockKeywords,removeKeywords,removeSentenceKeywords,removeLineKeywords;
   CheckBox enabled,smartFilter;
-  TextView status,senderRuleSummary,keywordForwardSummary;
-  String senderRulesRaw,keywordForwardRaw;
+  TextView status,senderRuleSummary,keywordForwardSummary,keywordRuleSummary;
+  String senderRulesRaw,keywordForwardRaw,keywordRulesRaw;
   AlertDialog ruleManagerDialog;
+  AlertDialog keywordRuleManagerDialog;
 
   @Override public void onCreate(Bundle state){
     super.onCreate(state);
@@ -45,6 +46,7 @@ public class MainActivity extends Activity {
     status=findViewById(R.id.status);
     senderRuleSummary=findViewById(R.id.senderRuleSummary);
     keywordForwardSummary=findViewById(R.id.keywordForwardSummary);
+    keywordRuleSummary=findViewById(R.id.keywordRuleSummary);
     baseUrl.setText(Prefs.baseApiUrl(this));
     secret.setText(Prefs.secret(this));
     deviceId.setText(Prefs.deviceId(this));
@@ -54,12 +56,15 @@ public class MainActivity extends Activity {
     removeLineKeywords.setText(Prefs.removeLineKeywords(this));
     senderRulesRaw=Prefs.senderRules(this);
     keywordForwardRaw=Prefs.keywordForwardRules(this);
+    keywordRulesRaw=Prefs.keywordFilterRules(this);
     enabled.setChecked(Prefs.enabled(this));
     smartFilter.setChecked(Prefs.smartFilterEnabled(this));
     updateRuleSummary();
     updateKeywordForwardSummary();
+    updateKeywordRuleSummary();
     findViewById(R.id.manageSenderRules).setOnClickListener(v -> showRuleManager());
     findViewById(R.id.manageKeywordForward).setOnClickListener(v -> showKeywordForwardManager());
+    findViewById(R.id.manageKeywordRules).setOnClickListener(v -> showKeywordRuleManager());
     findViewById(R.id.viewDeliveryLog).setOnClickListener(v -> showDeliveryLog());
     findViewById(R.id.save).setOnClickListener(v -> save());
     findViewById(R.id.test).setOnClickListener(v -> runV15Test());
@@ -67,7 +72,7 @@ public class MainActivity extends Activity {
   }
 
   void save(){
-    Prefs.save(this,baseUrl.getText().toString(),secret.getText().toString(),deviceId.getText().toString(),enabled.isChecked(),smartFilter.isChecked(),blockKeywords.getText().toString(),removeKeywords.getText().toString(),removeSentenceKeywords.getText().toString(),removeLineKeywords.getText().toString(),senderRulesRaw,keywordForwardRaw);
+    Prefs.save(this,baseUrl.getText().toString(),secret.getText().toString(),deviceId.getText().toString(),enabled.isChecked(),smartFilter.isChecked(),blockKeywords.getText().toString(),removeKeywords.getText().toString(),removeSentenceKeywords.getText().toString(),removeLineKeywords.getText().toString(),senderRulesRaw,keywordForwardRaw,keywordRulesRaw);
     baseUrl.setText(Prefs.baseApiUrl(this));
     status.setText(enabled.isChecked()?"Forwarding enabled":"Forwarding disabled");
   }
@@ -100,6 +105,109 @@ public class MainActivity extends Activity {
       updateKeywordForwardSummary();
       dialog.dismiss();
       Toast.makeText(this,"Keywords updated. Tap SAVE SETTINGS to apply.",Toast.LENGTH_SHORT).show();
+    }));
+    dialog.show();
+  }
+
+  private void updateKeywordRuleSummary(){
+    int count=KeywordRules.parse(keywordRulesRaw).size();
+    keywordRuleSummary.setText(count==0?"No keyword-specific rules.":count+" keyword-specific rule(s). Tap to edit.");
+  }
+
+  private void showKeywordRuleManager(){
+    if(keywordRuleManagerDialog!=null&&keywordRuleManagerDialog.isShowing()) keywordRuleManagerDialog.dismiss();
+    List<KeywordRules.Rule> rules=KeywordRules.parse(keywordRulesRaw);
+    LinearLayout list=new LinearLayout(this);
+    list.setOrientation(LinearLayout.VERTICAL);
+    list.setPadding(dp(16),dp(8),dp(16),dp(8));
+    if(rules.isEmpty()){
+      TextView empty=new TextView(this);
+      empty.setText("No keyword-specific rules yet.");
+      empty.setPadding(0,dp(12),0,dp(12));
+      list.addView(empty);
+    }
+    for(int i=0;i<rules.size();i++){
+      final int index=i;
+      LinearLayout row=new LinearLayout(this);
+      row.setOrientation(LinearLayout.HORIZONTAL);
+      TextView text=new TextView(this);
+      text.setText(rules.get(i).display());
+      text.setPadding(0,dp(12),dp(8),dp(12));
+      text.setOnClickListener(v -> showKeywordRuleEditor(index));
+      row.addView(text,new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1));
+      Button delete=new Button(this);
+      delete.setText("DELETE");
+      delete.setOnClickListener(v -> {
+        List<KeywordRules.Rule> updated=KeywordRules.parse(keywordRulesRaw);
+        if(index<updated.size()) updated.remove(index);
+        keywordRulesRaw=KeywordRules.serialize(updated);
+        updateKeywordRuleSummary();
+        showKeywordRuleManager();
+      });
+      row.addView(delete);
+      list.addView(row);
+    }
+    ScrollView scroll=new ScrollView(this);
+    scroll.addView(list);
+    keywordRuleManagerDialog=new AlertDialog.Builder(this).setTitle("Keyword-specific rules").setView(scroll)
+        .setPositiveButton("ADD RULE",(dialog,which) -> showKeywordRuleEditor(-1)).setNegativeButton("DONE",null).create();
+    keywordRuleManagerDialog.show();
+  }
+
+  private void showKeywordRuleEditor(int editIndex){
+    List<KeywordRules.Rule> existing=KeywordRules.parse(keywordRulesRaw);
+    KeywordRules.Rule editing=editIndex>=0&&editIndex<existing.size()?existing.get(editIndex):null;
+    LinearLayout form=new LinearLayout(this);
+    form.setOrientation(LinearLayout.VERTICAL);
+    form.setPadding(dp(20),dp(8),dp(20),0);
+    EditText matchInput=new EditText(this);
+    matchInput.setHint("Match message keyword, e.g. Pathao");
+    if(editing!=null) matchInput.setText(editing.matchKeyword);
+    form.addView(matchInput);
+    Spinner actionSpinner=new Spinner(this);
+    actionSpinner.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,ACTION_LABELS));
+    if(editing!=null) actionSpinner.setSelection(actionIndex(editing.action));
+    form.addView(actionSpinner);
+    EditText valueInput=new EditText(this);
+    valueInput.setHint("Filter keyword(s), comma separated");
+    EditText endInput=new EditText(this);
+    endInput.setHint("End marker, e.g. TxnId:");
+    if(editing!=null&&"remove_range".equals(editing.action)){
+      String[] range=editing.value.split("=>",2);
+      valueInput.setText(range[0].trim());
+      if(range.length>1) endInput.setText(range[1].trim());
+    } else if(editing!=null) valueInput.setText(editing.value);
+    form.addView(valueInput);
+    form.addView(endInput);
+    Runnable updateRangeUi=() -> {
+      boolean range=actionSpinner.getSelectedItemPosition()==4;
+      valueInput.setHint(range?"Start marker":"Filter keyword(s), comma separated");
+      endInput.setVisibility(range?View.VISIBLE:View.GONE);
+    };
+    actionSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+      public void onItemSelected(AdapterView<?> parent,View view,int position,long id){ updateRangeUi.run(); }
+      public void onNothingSelected(AdapterView<?> parent){}
+    });
+    updateRangeUi.run();
+    AlertDialog dialog=new AlertDialog.Builder(this).setTitle(editing==null?"Add keyword rule":"Edit keyword rule")
+        .setView(form).setPositiveButton("SAVE",null).setNegativeButton("CANCEL",null).create();
+    dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+      String match=matchInput.getText().toString().trim();
+      String start=valueInput.getText().toString().trim();
+      boolean range=actionSpinner.getSelectedItemPosition()==4;
+      String end=endInput.getText().toString().trim();
+      if(match.isEmpty()||start.isEmpty()||(range&&end.isEmpty())||match.contains("|")){
+        Toast.makeText(this,"Enter the match keyword and required filter value.",Toast.LENGTH_SHORT).show();
+        return;
+      }
+      String value=range?start+" => "+end:start;
+      KeywordRules.Rule rule=new KeywordRules.Rule(match,ACTION_VALUES[actionSpinner.getSelectedItemPosition()],value);
+      List<KeywordRules.Rule> updated=KeywordRules.parse(keywordRulesRaw);
+      if(editIndex>=0&&editIndex<updated.size()) updated.set(editIndex,rule); else updated.add(rule);
+      keywordRulesRaw=KeywordRules.serialize(updated);
+      updateKeywordRuleSummary();
+      dialog.dismiss();
+      showKeywordRuleManager();
     }));
     dialog.show();
   }

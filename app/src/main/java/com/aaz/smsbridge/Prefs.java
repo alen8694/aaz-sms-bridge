@@ -16,6 +16,7 @@ public final class Prefs {
   public static String removeLineKeywords(Context c){ return p(c).getString("remove_line_keywords", ""); }
   public static String senderRules(Context c){ return p(c).getString("sender_filter_rules", ""); }
   public static String keywordForwardRules(Context c){ return p(c).getString("keyword_forward_rules", ""); }
+  public static String keywordFilterRules(Context c){ return p(c).getString("keyword_filter_rules", ""); }
   public static void recordSender(Context c,String sender){
     if(sender==null||sender.trim().isEmpty()) return;
     Set<String> senders=new HashSet<>(p(c).getStringSet("known_senders",Collections.emptySet()));
@@ -26,12 +27,12 @@ public final class Prefs {
     senders.sort(String.CASE_INSENSITIVE_ORDER);
     return senders;
   }
-  public static void save(Context c,String baseUrl,String secret,String deviceId,boolean enabled,boolean filterEnabled,String block,String remove,String removeSentences,String removeLines,String senderRules,String keywordForwardRules){
+  public static void save(Context c,String baseUrl,String secret,String deviceId,boolean enabled,boolean filterEnabled,String block,String remove,String removeSentences,String removeLines,String senderRules,String keywordForwardRules,String keywordFilterRules){
     p(c).edit().putString("endpoint",ApiUrls.normalizeBase(baseUrl)).putString("secret",secret.trim()).remove("group_id")
       .remove("whitelist").putString("device_id",deviceId.trim()).putBoolean("enabled",enabled)
       .putBoolean("smart_filter_enabled",filterEnabled).putString("block_message_keywords",block.trim())
       .putString("remove_keywords",remove.trim()).putString("remove_sentence_keywords",removeSentences.trim())
       .putString("remove_line_keywords",removeLines.trim()).putString("sender_filter_rules",senderRules.trim())
-      .putString("keyword_forward_rules",keywordForwardRules.trim()).apply();
+      .putString("keyword_forward_rules",keywordForwardRules.trim()).putString("keyword_filter_rules",keywordFilterRules.trim()).apply();
   }
 }

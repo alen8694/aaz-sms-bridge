@@ -24,5 +24,6 @@ The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 - After server routing approval, an optional local smart filter can block the message, remove configured keywords, remove matching sentences/segments, or remove matching lines before `/inbox`.
 - A visual sender-rule manager supports multiple rules per sender with sender/action dropdowns, add/edit/delete controls, and `block`, `remove_keyword`, `remove_sentence`, `remove_line`, or `remove_range` actions.
 - A separate Keyword Based Forward manager forwards once when any configured case-insensitive body keyword matches, regardless of sender routing; the original sender is preserved.
+- A visual keyword-specific filter manager supports multiple body-keyword rules with the same block/remove actions as sender-specific rules.
 - Incoming bodies are encrypted with an Android Keystore AES-GCM key in a persistent local queue; WorkManager retries transient network/server failures.
 - The in-app delivery log stores at most 20 metadata-only status entries and never stores the SMS body, bridge secret, or OTP values.
