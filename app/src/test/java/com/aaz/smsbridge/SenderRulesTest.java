@@ -38,4 +38,11 @@ public class SenderRulesTest {
     assertEquals(SmartFilter.Action.BLOCK,SenderRules.apply("bKash","Your PIN is 1234",serialized).action);
     assertEquals("Payment received. TrxID ABC.",SenderRules.apply("bKash","Payment received. Balance Tk 50.00. TrxID ABC.",serialized).message);
   }
+
+  @Test public void removesLogicalBalanceFieldWhenSmsHasNoRealLineBreaks(){
+    String message="Add Money from Bank is Successful. From: City Bank PLC Amount: Tk 50.0 TxnID: 75WOGURA Balance: Tk 37444.05 30/08/2026 21:39";
+    SmartFilter.Result result=SenderRules.apply("NAGAD",message,"NAGAD | remove_line | Balance");
+    assertEquals(SmartFilter.Action.FORWARD,result.action);
+    assertEquals("Add Money from Bank is Successful. From: City Bank PLC Amount: Tk 50.0 TxnID: 75WOGURA 30/08/2026 21:39",result.message);
+  }
 }
