@@ -36,7 +36,7 @@ final class InactivityLog {
     for(int i=0;i<array.length();i++) try {
       JSONObject item=array.getJSONObject(i);
       long start=item.optLong("start"),end=item.optLong("end");
-      result.add(format.format(new Date(start))+" → "+format.format(new Date(end))+" · approximately "+duration(end-start)+"\nPossible reason: "+item.optString("reason","Unknown"));
+      result.add(format.format(new Date(start))+" → "+format.format(new Date(end))+" · check delayed approximately "+duration(end-start)+"\nPossible delay reason: "+item.optString("reason","Unknown"));
     } catch(Exception ignored){}
     return result;
   }

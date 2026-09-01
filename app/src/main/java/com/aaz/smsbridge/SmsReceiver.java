@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 public class SmsReceiver extends BroadcastReceiver {
   @Override public void onReceive(Context context,Intent intent){
     if(!Telephony.Sms.Intents.SMS_RECEIVED_ACTION.equals(intent.getAction())||!Prefs.enabled(context)) return;
+    BridgeServiceController.update(context);
     SmsMessage[] messages=Telephony.Sms.Intents.getMessagesFromIntent(intent);
     if(messages==null||messages.length==0) return;
     PendingResult pendingResult=goAsync();

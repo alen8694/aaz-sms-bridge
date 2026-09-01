@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
   private static final String[] ACTION_LABELS={"Block entire message","Remove keyword only","Remove sentence","Remove line","Remove range"};
   private static final String[] ACTION_VALUES={"block","remove_keyword","remove_sentence","remove_line","remove_range"};
   EditText baseUrl,secret,deviceId,blockKeywords,removeKeywords,removeSentenceKeywords,removeLineKeywords;
-  CheckBox enabled,smartFilter,healthCheck;
+  CheckBox enabled,smartFilter,healthCheck,alwaysActive;
   TextView status,senderRuleSummary,keywordForwardSummary,keywordRuleSummary,backgroundStatus;
   String senderRulesRaw,keywordForwardRaw,keywordRulesRaw;
   AlertDialog ruleManagerDialog;
@@ -47,6 +47,7 @@ public class MainActivity extends Activity {
     enabled=findViewById(R.id.enabled);
     smartFilter=findViewById(R.id.smartFilter);
     healthCheck=findViewById(R.id.healthCheck);
+    alwaysActive=findViewById(R.id.alwaysActive);
     status=findViewById(R.id.status);
     senderRuleSummary=findViewById(R.id.senderRuleSummary);
     keywordForwardSummary=findViewById(R.id.keywordForwardSummary);
@@ -65,6 +66,7 @@ public class MainActivity extends Activity {
     enabled.setChecked(Prefs.enabled(this));
     smartFilter.setChecked(Prefs.smartFilterEnabled(this));
     healthCheck.setChecked(Prefs.healthCheckEnabled(this));
+    alwaysActive.setChecked(Prefs.alwaysActiveEnabled(this));
     updateRuleSummary();
     updateKeywordForwardSummary();
     updateKeywordRuleSummary();
@@ -78,6 +80,7 @@ public class MainActivity extends Activity {
     findViewById(R.id.test).setOnClickListener(v -> runV15Test());
     requestReceivePermission();
     updateBackgroundStatus();
+    BridgeServiceController.update(this);
   }
 
   @Override protected void onResume(){
@@ -102,15 +105,17 @@ public class MainActivity extends Activity {
   private void showInactivityLog(){
     if(Prefs.healthCheckEnabled(this)) InactivityLog.checkNow(this);
     List<String> entries=InactivityLog.entries(this);
-    String message=entries.isEmpty()?"No inactivity detected yet.":android.text.TextUtils.join("\n\n",entries);
-    new AlertDialog.Builder(this).setTitle("Inactivity history — latest 20").setMessage(message)
+    String message=entries.isEmpty()?"No delayed health checks recorded.":android.text.TextUtils.join("\n\n",entries);
+    new AlertDialog.Builder(this).setTitle("Health-check delays — latest 20").setMessage(message+"\n\nNote: a delayed check does not prove SMS reception stopped; Android Doze may delay periodic jobs.")
         .setPositiveButton("CLOSE",null).setNegativeButton("CLEAR",(dialog,which) -> InactivityLog.clear(this)).show();
   }
 
   void save(){
     Prefs.save(this,baseUrl.getText().toString(),secret.getText().toString(),deviceId.getText().toString(),enabled.isChecked(),smartFilter.isChecked(),blockKeywords.getText().toString(),removeKeywords.getText().toString(),removeSentenceKeywords.getText().toString(),removeLineKeywords.getText().toString(),senderRulesRaw,keywordForwardRaw,keywordRulesRaw);
     Prefs.setHealthCheckEnabled(this,healthCheck.isChecked());
+    Prefs.setAlwaysActiveEnabled(this,alwaysActive.isChecked());
     HealthMonitor.update(this);
+    BridgeServiceController.update(this);
     baseUrl.setText(Prefs.baseApiUrl(this));
     status.setText(enabled.isChecked()?"Forwarding enabled":"Forwarding disabled");
   }
