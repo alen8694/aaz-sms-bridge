@@ -14,4 +14,5 @@ final class ApiUrls {
 
   static String senderSync(String base){ return normalizeBase(base)+"/sender-sync"; }
   static String inbox(String base){ return normalizeBase(base)+"/inbox"; }
+  static String heartbeat(String base){ return normalizeBase(base)+"/heartbeat"; }
 }

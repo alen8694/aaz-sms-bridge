@@ -8,14 +8,25 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public final class BridgeForegroundService extends Service {
   private static final String CHANNEL_ID="aaz_bridge_active";
   private static final int NOTIFICATION_ID=4201;
+  private static final long HEARTBEAT_MINUTES=5;
+  private ScheduledExecutorService scheduler;
+  private boolean monitoringStarted;
 
   @Override public void onCreate(){
     super.onCreate();
     createChannel();
+    scheduler=Executors.newSingleThreadScheduledExecutor(r->{
+      Thread thread=new Thread(r,"aaz-bridge-monitor");
+      thread.setDaemon(true);
+      return thread;
+    });
   }
 
   @Override public int onStartCommand(Intent intent,int flags,int startId){
@@ -25,7 +36,24 @@ public final class BridgeForegroundService extends Service {
       stopSelf();
       return START_NOT_STICKY;
     }
+    startMonitoring();
     return START_STICKY;
+  }
+
+  private synchronized void startMonitoring(){
+    if(monitoringStarted||scheduler==null||scheduler.isShutdown()) return;
+    monitoringStarted=true;
+    scheduler.scheduleWithFixedDelay(()->{
+      if(!Prefs.enabled(this)) return;
+      MissedSmsScanner.scan(this);
+      try { BridgeClient.sendHeartbeat(this); }
+      catch(Exception ignored){ /* The next heartbeat retries; SMS delivery remains independent. */ }
+    },0,HEARTBEAT_MINUTES,TimeUnit.MINUTES);
+  }
+
+  @Override public void onDestroy(){
+    if(scheduler!=null) scheduler.shutdownNow();
+    super.onDestroy();
   }
 
   @Override public IBinder onBind(Intent intent){ return null; }

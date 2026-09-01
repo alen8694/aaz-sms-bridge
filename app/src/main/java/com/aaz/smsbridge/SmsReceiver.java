@@ -32,16 +32,22 @@ public class SmsReceiver extends BroadcastReceiver {
     for(SmsMessage message:messages) body.append(message.getDisplayMessageBody());
     long receivedAt=messages[0].getTimestampMillis();
     try {
-      String smsId=BridgeClient.smsId(sender,body.toString(),receivedAt);
-      if(DuplicateGuard.isDelivered(app,smsId)) return;
-      Prefs.recordSender(app,sender);
-      PendingSmsStore store=new PendingSmsStore(app);
-      if(store.put(smsId,sender,body.toString(),receivedAt)) DeliveryLog.add(app,sender,"Queued for delivery");
-      // Wait only for WorkManager to persist the request, never for network delivery.
-      SmsWork.enqueue(app,smsId).getResult().get(8,TimeUnit.SECONDS);
+      queueOne(app,sender,body.toString(),receivedAt,false);
     } catch(Exception e){
       Log.e("AAZSmsBridge","Could not securely queue incoming SMS",e);
       DeliveryLog.add(app,sender,"Failed: could not queue securely");
     }
+  }
+
+  static boolean queueOne(Context app,String sender,String body,long receivedAt,boolean recovered) throws Exception {
+    String smsId=BridgeClient.smsId(sender,body,receivedAt);
+    if(DuplicateGuard.isDelivered(app,smsId)) return true;
+    Prefs.recordSender(app,sender);
+    PendingSmsStore store=new PendingSmsStore(app);
+    boolean inserted=store.put(smsId,sender,body,receivedAt);
+    if(inserted) DeliveryLog.add(app,sender,recovered?"Recovered missed SMS; queued":"Queued for delivery");
+    // Wait only for WorkManager to persist the request, never for network delivery.
+    SmsWork.enqueue(app,smsId).getResult().get(8,TimeUnit.SECONDS);
+    return true;
   }
 }

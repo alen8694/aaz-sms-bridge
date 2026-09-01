@@ -25,6 +25,7 @@
     <TextView android:id="@+id/backgroundStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Checking battery optimization…" android:textColor="#7A4E00" android:layout_marginBottom="8dp" />
     <CheckBox android:id="@+id/alwaysActive" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Keep bridge always active (recommended)" android:checked="true" />
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Shows a permanent ‘AAZ SMS Bridge active’ notification." android:textColor="#555555" android:layout_marginBottom="8dp" />
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Heartbeat runs every 5 minutes. If Android stops the app, SMS history permission lets it recover missed inbox messages automatically after restart." android:textColor="#555555" android:layout_marginBottom="8dp" />
     <CheckBox android:id="@+id/healthCheck" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Enable diagnostic health-check delay history" android:checked="false" />
     <Button android:id="@+id/viewInactivityLog" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="VIEW HEALTH-CHECK DELAY HISTORY" />
     <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Disabled until settings are saved." android:textColor="#555555" android:layout_marginTop="16dp" />

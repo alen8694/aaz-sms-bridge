@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import android.os.Build;
 
 public final class BridgeClient {
   static final class SenderSyncResult {
@@ -44,6 +45,18 @@ public final class BridgeClient {
     payload.put("device_id",Prefs.deviceId(context));
     payload.put("sms_id",smsId);
     post(context,ApiUrls.inbox(Prefs.baseApiUrl(context)),payload);
+  }
+
+  public static void sendHeartbeat(Context context) throws Exception {
+    JSONObject payload=new JSONObject();
+    payload.put("device_id",Prefs.deviceId(context));
+    payload.put("app_version",BuildConfig.VERSION_NAME);
+    payload.put("phone_model",Build.MANUFACTURER+" "+Build.MODEL);
+    payload.put("android_version",Build.VERSION.RELEASE);
+    payload.put("forwarding_enabled",Prefs.enabled(context));
+    payload.put("always_active",Prefs.alwaysActiveEnabled(context));
+    payload.put("sent_at",System.currentTimeMillis());
+    post(context,ApiUrls.heartbeat(Prefs.baseApiUrl(context)),payload);
   }
 
   private static String post(Context context,String endpoint,JSONObject payload) throws Exception {

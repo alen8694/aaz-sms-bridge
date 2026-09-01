@@ -13,5 +13,6 @@ public class ApiUrlsTest {
     String base="https://example.com/wp-json/aaz-sms-bridge/v1/";
     assertEquals("https://example.com/wp-json/aaz-sms-bridge/v1/sender-sync",ApiUrls.senderSync(base));
     assertEquals("https://example.com/wp-json/aaz-sms-bridge/v1/inbox",ApiUrls.inbox(base));
+    assertEquals("https://example.com/wp-json/aaz-sms-bridge/v1/heartbeat",ApiUrls.heartbeat(base));
   }
 }

@@ -12,6 +12,9 @@ public final class Prefs {
   public static boolean smartFilterEnabled(Context c){ return p(c).getBoolean("smart_filter_enabled", false); }
   public static boolean healthCheckEnabled(Context c){ return p(c).getBoolean("health_check_enabled", false); }
   public static boolean alwaysActiveEnabled(Context c){ return p(c).getBoolean("always_active_enabled", true); }
+  public static long lastInboxScan(Context c){ return p(c).getLong("last_inbox_scan",System.currentTimeMillis()); }
+  public static void setLastInboxScan(Context c,long value){ p(c).edit().putLong("last_inbox_scan",value).commit(); }
+  public static void initializeInboxScan(Context c){ if(!p(c).contains("last_inbox_scan")) setLastInboxScan(c,System.currentTimeMillis()); }
   public static String blockMessageKeywords(Context c){ return p(c).getString("block_message_keywords", "OTP, PIN, password"); }
   public static String removeKeywords(Context c){ return p(c).getString("remove_keywords", ""); }
   public static String removeSentenceKeywords(Context c){ return p(c).getString("remove_sentence_keywords", ""); }

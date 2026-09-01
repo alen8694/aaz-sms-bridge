@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends Activity {
-  private static final int RECEIVE_SMS_REQUEST=100;
+  private static final int SMS_PERMISSIONS_REQUEST=100;
   private static final String[] ACTION_LABELS={"Block entire message","Remove keyword only","Remove sentence","Remove line","Remove range"};
   private static final String[] ACTION_VALUES={"block","remove_keyword","remove_sentence","remove_line","remove_range"};
   EditText baseUrl,secret,deviceId,blockKeywords,removeKeywords,removeSentenceKeywords,removeLineKeywords;
@@ -78,7 +78,7 @@ public class MainActivity extends Activity {
     findViewById(R.id.viewInactivityLog).setOnClickListener(v -> showInactivityLog());
     findViewById(R.id.save).setOnClickListener(v -> save());
     findViewById(R.id.test).setOnClickListener(v -> runV15Test());
-    requestReceivePermission();
+    requestSmsPermissions();
     updateBackgroundStatus();
     BridgeServiceController.update(this);
   }
@@ -405,13 +405,23 @@ public class MainActivity extends Activity {
     if(error instanceof IOException&&"Invalid server response".equals(error.getMessage())) return "Invalid server response.";
     return "Connection failed. Check the server URL and network.";
   }
-  private void requestReceivePermission(){
-    if(checkSelfPermission(Manifest.permission.RECEIVE_SMS)!=PackageManager.PERMISSION_GRANTED)
-      requestPermissions(new String[]{Manifest.permission.RECEIVE_SMS},RECEIVE_SMS_REQUEST);
+  private void requestSmsPermissions(){
+    List<String> missing=new ArrayList<>();
+    if(checkSelfPermission(Manifest.permission.RECEIVE_SMS)!=PackageManager.PERMISSION_GRANTED) missing.add(Manifest.permission.RECEIVE_SMS);
+    if(checkSelfPermission(Manifest.permission.READ_SMS)!=PackageManager.PERMISSION_GRANTED) missing.add(Manifest.permission.READ_SMS);
+    if(!missing.isEmpty()) requestPermissions(missing.toArray(new String[0]),SMS_PERMISSIONS_REQUEST);
   }
   @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] results){
     super.onRequestPermissionsResult(requestCode,permissions,results);
-    if(requestCode==RECEIVE_SMS_REQUEST&&(results.length==0||results[0]!=PackageManager.PERMISSION_GRANTED))
-      status.setText("SMS receive permission denied. Forwarding cannot receive messages.");
+    if(requestCode!=SMS_PERMISSIONS_REQUEST) return;
+    boolean receive=checkSelfPermission(Manifest.permission.RECEIVE_SMS)==PackageManager.PERMISSION_GRANTED;
+    boolean read=checkSelfPermission(Manifest.permission.READ_SMS)==PackageManager.PERMISSION_GRANTED;
+    if(read) Prefs.initializeInboxScan(this);
+    if(!receive) status.setText("SMS receive permission denied. Live forwarding cannot work.");
+    else if(!read) status.setText("SMS history permission denied. Messages missed while inactive cannot be recovered.");
+    else {
+      status.setText("SMS permissions enabled. Missed-message recovery is ready.");
+      new Thread(()->MissedSmsScanner.scan(this),"aaz-initial-catchup").start();
+    }
   }
 }
