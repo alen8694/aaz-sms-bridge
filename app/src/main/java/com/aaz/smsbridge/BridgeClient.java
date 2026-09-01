@@ -50,7 +50,7 @@ public final class BridgeClient {
   public static void sendHeartbeat(Context context) throws Exception {
     JSONObject payload=new JSONObject();
     payload.put("device_id",Prefs.deviceId(context));
-    payload.put("app_version",BuildConfig.VERSION_NAME);
+    payload.put("app_version",context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionName);
     payload.put("phone_model",Build.MANUFACTURER+" "+Build.MODEL);
     payload.put("android_version",Build.VERSION.RELEASE);
     payload.put("forwarding_enabled",Prefs.enabled(context));
